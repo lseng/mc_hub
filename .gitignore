@@ -67,3 +67,4 @@ videos/
 # Bun lock files
 bun.lock
 bun.lockb
+.vercel

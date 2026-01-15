@@ -34,7 +34,7 @@ class ADWState:
     def update(self, **kwargs):
         """Update state with new key-value pairs."""
         # Filter to only our core fields
-        core_fields = {"adw_id", "issue_number", "branch_name", "plan_file", "issue_class", "worktree_path", "backend_port", "frontend_port", "model_set", "all_adws"}
+        core_fields = {"adw_id", "issue_number", "branch_name", "plan_file", "issue_class", "worktree_path", "backend_port", "frontend_port", "model_set", "all_adws", "vercel_deployment_id", "vercel_deployment_url", "vercel_deployment_status"}
         for key, value in kwargs.items():
             if key in core_fields:
                 self.data[key] = value
@@ -89,6 +89,9 @@ class ADWState:
             frontend_port=self.data.get("frontend_port"),
             model_set=self.data.get("model_set", "base"),
             all_adws=self.data.get("all_adws", []),
+            vercel_deployment_id=self.data.get("vercel_deployment_id"),
+            vercel_deployment_url=self.data.get("vercel_deployment_url"),
+            vercel_deployment_status=self.data.get("vercel_deployment_status"),
         )
 
         # Save as JSON
@@ -168,5 +171,8 @@ class ADWState:
             "backend_port": self.data.get("backend_port"),
             "frontend_port": self.data.get("frontend_port"),
             "all_adws": self.data.get("all_adws", []),
+            "vercel_deployment_id": self.data.get("vercel_deployment_id"),
+            "vercel_deployment_url": self.data.get("vercel_deployment_url"),
+            "vercel_deployment_status": self.data.get("vercel_deployment_status"),
         }
         print(json.dumps(output_data, indent=2))

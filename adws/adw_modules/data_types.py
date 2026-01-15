@@ -232,6 +232,10 @@ class ADWStateData(BaseModel):
     frontend_port: Optional[int] = None
     model_set: Optional[ModelSet] = "base"  # Default to "base" model set
     all_adws: List[str] = Field(default_factory=list)
+    # Vercel deployment tracking
+    vercel_deployment_id: Optional[str] = None
+    vercel_deployment_url: Optional[str] = None
+    vercel_deployment_status: Optional[str] = None  # pending, building, ready, error
 
 
 class ReviewIssue(BaseModel):
@@ -270,6 +274,25 @@ class DocumentationResult(BaseModel):
     documentation_created: bool
     documentation_path: Optional[str] = None
     error_message: Optional[str] = None
+
+
+# Deployment status types
+DeploymentStatus = Literal["pending", "building", "ready", "error", "canceled"]
+
+
+class DeploymentResult(BaseModel):
+    """Result from Vercel deployment tracking."""
+
+    success: bool
+    deployment_id: Optional[str] = None
+    deployment_url: Optional[str] = None
+    deployment_status: DeploymentStatus = "pending"
+    project_name: Optional[str] = None
+    branch: Optional[str] = None
+    commit_sha: Optional[str] = None
+    error_message: Optional[str] = None
+    created_at: Optional[datetime] = None
+    ready_at: Optional[datetime] = None
 
 
 class ADWExtractionResult(BaseModel):
