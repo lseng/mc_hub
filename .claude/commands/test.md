@@ -39,37 +39,19 @@ TEST_COMMAND_TIMEOUT: 5 minutes
 
 ### Backend Tests
 
-1. **Python Syntax Check**
+1. **Deno TypeScript Check**
    - Preparation Command: None
-   - Command: `cd app/server && uv run python -m py_compile server.py main.py core/*.py`
-   - test_name: "python_syntax_check"
-   - test_purpose: "Validates Python syntax by compiling source files to bytecode, catching syntax errors like missing colons, invalid indentation, or malformed statements"
-
-2. **Backend Code Quality Check**
-   - Preparation Command: None
-   - Command: `cd app/server && uv run ruff check .`
-   - test_name: "backend_linting"
-   - test_purpose: "Validates Python code quality, identifies unused imports, style violations, and potential bugs"
-
-3. **All Backend Tests**
-   - Preparation Command: None
-   - Command: `cd app/server && uv run pytest tests/ -v --tb=short`
-   - test_name: "all_backend_tests"
-   - test_purpose: "Validates all backend functionality including file processing, SQL security, LLM integration, and API endpoints"
+   - Command: `cd supabase/functions/make-server-e08b724b && deno check index.ts`
+   - test_name: "deno_typescript_check"
+   - test_purpose: "Validates Supabase edge function TypeScript syntax and type correctness, catching type errors and import issues"
 
 ### Frontend Tests
 
-4. **TypeScript Type Check**
+2. **Frontend Build**
    - Preparation Command: None
-   - Command: `cd app/client && bun tsc --noEmit`
-   - test_name: "typescript_check"
-   - test_purpose: "Validates TypeScript type correctness without generating output files, catching type errors, missing imports, and incorrect function signatures"
-
-5. **Frontend Build**
-   - Preparation Command: None
-   - Command: `cd app/client && bun run build`
+   - Command: `npm run build`
    - test_name: "frontend_build"
-   - test_purpose: "Validates the complete frontend build process including bundling, asset optimization, and production compilation"
+   - test_purpose: "Validates the complete frontend build process including TypeScript compilation, bundling, asset optimization, and production compilation"
 
 ## Report
 
@@ -101,15 +83,15 @@ TEST_COMMAND_TIMEOUT: 5 minutes
   {
     "test_name": "frontend_build",
     "passed": false,
-    "execution_command": "cd app/client && bun run build",
-    "test_purpose": "Validates TypeScript compilation, module resolution, and production build process for the frontend application",
+    "execution_command": "npm run build",
+    "test_purpose": "Validates the complete frontend build process including TypeScript compilation, bundling, asset optimization, and production compilation",
     "error": "TS2345: Argument of type 'string' is not assignable to parameter of type 'number'"
   },
   {
-    "test_name": "all_backend_tests",
+    "test_name": "deno_typescript_check",
     "passed": true,
-    "execution_command": "cd app/server && uv run pytest tests/ -v --tb=short",
-    "test_purpose": "Validates all backend functionality including file processing, SQL security, LLM integration, and API endpoints"
+    "execution_command": "cd supabase/functions/make-server-e08b724b && deno check index.ts",
+    "test_purpose": "Validates Supabase edge function TypeScript syntax and type correctness, catching type errors and import issues"
   }
 ]
 ```
