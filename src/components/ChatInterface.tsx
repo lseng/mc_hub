@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Bot, User, ExternalLink, CheckCircle, X } from 'lucide-react';
+import { Send, Bot, User, ExternalLink } from 'lucide-react';
 
 interface Resource {
   id: string;
@@ -18,11 +18,6 @@ interface Resource {
 
 interface ChatInterfaceProps {
   onResourceClick: (resource: Resource) => void;
-}
-
-interface PendingResourceOffer {
-  messageId: string;
-  suggest: any;
 }
 
 const examplePrompts = [
@@ -60,8 +55,8 @@ function ChatRow({ row, onOpen }: { row: any; onOpen: (r: any) => void }) {
             </div>
           )}
 
-          {/* Resource cards within the chat bubble - only show if mode is NOT offer_resources */}
-          {row.resources?.length > 0 && row.mode !== 'offer_resources' && (
+          {/* Resource cards within the chat bubble */}
+          {row.resources?.length > 0 && (
             <div className="chat-resources space-y-2 mt-2">
               {row.resources.map((r: any) => (
                 <motion.div
@@ -110,7 +105,6 @@ export function ChatInterface({ onResourceClick }: ChatInterfaceProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [rateLimitMessage, setRateLimitMessage] = useState<string>('');
   const [currentRole] = useState('Member'); // Default role - could be made configurable
-  const [pendingResourceOffer, setPendingResourceOffer] = useState<PendingResourceOffer | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const sendMessage = async (msg: string) => {
@@ -172,25 +166,13 @@ export function ChatInterface({ onResourceClick }: ChatInterfaceProps) {
       const aiMessage: any = {
         from: "ai",
         id: Date.now().toString(), // Add unique ID for tracking
-        mode: j.mode, // Store the mode from response
         // Try to get answer from various possible fields in the response
         answer: j.answer || j.text || j.message || 'I received your message but there was no response content.',
       };
 
-      // Handle offer_resources mode
-      if (j.mode === 'offer_resources') {
-        // Store the suggest payload for later use
-        if (j.suggest) {
-          setPendingResourceOffer({
-            messageId: aiMessage.id,
-            suggest: j.suggest
-          });
-        }
-      } else {
-        // For other modes, add resources if they exist
-        if (Array.isArray(j.resources) && j.resources.length) {
-          aiMessage.resources = j.resources;
-        }
+      // Add resources if they exist
+      if (Array.isArray(j.resources) && j.resources.length) {
+        aiMessage.resources = j.resources;
       }
 
       setRows(prev => [...prev, aiMessage]);
@@ -204,75 +186,6 @@ export function ChatInterface({ onResourceClick }: ChatInterfaceProps) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleResourceOfferResponse = async (accepted: boolean) => {
-    if (!pendingResourceOffer) return;
-
-    if (accepted) {
-      setIsLoading(true);
-      try {
-        // Import the required values
-        const { makeBaseUrl, publicAnonKey } = await import('../utils/supabase/info');
-        
-        const url = `${makeBaseUrl}/search`;
-        
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            'Authorization': `Bearer ${publicAnonKey}`,
-          },
-          body: JSON.stringify(pendingResourceOffer.suggest)
-        });
-
-        if (!response.ok) {
-          throw new Error(`Search request failed with status ${response.status}`);
-        }
-
-        const searchResult = await response.json();
-        console.log('Search response:', searchResult);
-
-        // Validate response structure
-        if (!searchResult || typeof searchResult !== 'object') {
-          throw new Error('Invalid search response: not an object');
-        }
-
-        // Extract resources - handle both direct resources array and nested structure
-        let resources = [];
-        if (Array.isArray(searchResult.resources)) {
-          resources = searchResult.resources;
-        } else if (Array.isArray(searchResult)) {
-          resources = searchResult;
-        } else {
-          console.warn('No resources found in search response:', searchResult);
-        }
-
-        // Add the resources as a new AI message
-        const resourceMessage: any = {
-          from: "ai",
-          id: Date.now().toString(),
-          answer: resources.length > 0 
-            ? "Here are the resources I found for you:" 
-            : "I didn't find any specific resources for that request.",
-          resources: resources
-        };
-
-        setRows(prev => [...prev, resourceMessage]);
-
-      } catch (error) {
-        console.error('Resource search error:', error);
-        setRows(prev => [...prev, { 
-          from: "ai", 
-          answer: 'I apologize, but I encountered an error while fetching resources. Please try again.' 
-        }]);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    // Clear the pending offer
-    setPendingResourceOffer(null);
   };
 
   const handleExampleClick = (prompt: string) => {
@@ -374,36 +287,6 @@ export function ChatInterface({ onResourceClick }: ChatInterfaceProps) {
           </motion.div>
         )}
       </div>
-
-      {/* Resource Offer Action Buttons */}
-      {pendingResourceOffer && !isLoading && (
-        <div className="px-4 py-2 border-t border-gray-200 bg-gray-50">
-          <div className="flex gap-2">
-            <motion.button
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => handleResourceOfferResponse(true)}
-              className="flex-1 flex items-center justify-center gap-2 p-3 bg-[#406780] text-white rounded-lg hover:bg-[#355a73] transition-colors text-base font-medium"
-            >
-              <CheckCircle size={16} />
-              Yes, show resources
-            </motion.button>
-            <motion.button
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => handleResourceOfferResponse(false)}
-              className="flex-1 flex items-center justify-center gap-2 p-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-base font-medium"
-            >
-              <X size={16} />
-              Not now
-            </motion.button>
-          </div>
-        </div>
-      )}
 
       {/* Input Area */}
       <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
