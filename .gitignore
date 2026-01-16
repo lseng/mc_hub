@@ -68,3 +68,4 @@ videos/
 bun.lock
 bun.lockb
 .vercel
+.env*.local

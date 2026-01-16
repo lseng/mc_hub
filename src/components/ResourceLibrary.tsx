@@ -238,7 +238,7 @@ export function ResourceLibrary({ onResourceClick, selectedResourceId, onToggleM
       const descMatch = date.description?.toLowerCase().includes(searchLower);
       return dateMatch || titleMatch || descMatch;
     });
-  }, [searchQuery]);
+  }, [searchQuery, importantDates]);
 
   // Get unique roles for debugging
   const availableRoles = useMemo(() => {
