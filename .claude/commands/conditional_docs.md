@@ -68,3 +68,13 @@ This prompt helps you determine what documentation you should read based on the 
     - When implementing background color changes to green variants
     - When troubleshooting visual hierarchy with light green backgrounds
     - When making background color updates following the CSS variable pattern
+
+- app_docs/feature-f45c6e6a-chat-intent-claude-migration.md
+  - Conditions:
+    - When working with chat intent detection or AI chat functionality
+    - When implementing or modifying Claude API integrations
+    - When troubleshooting resource search or discovery in the chat interface
+    - When migrating from Gemini to Claude API
+    - When working with the make-server-e08b724b edge function
+    - When implementing direct database queries for resource search
+    - When debugging chat response handling or resource presentation
