@@ -9,7 +9,7 @@ const SB_SVC  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || SB_ANON; // prefer 
 const FUNCS   = `${SB_URL}/functions/v1`;
 const REST    = `${SB_URL}/rest/v1`;
 const GEMINI  = Deno.env.get("GEMINI_API_KEY") || "";
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "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";
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
 
 const ALLOW = new Set([
   "chat",
@@ -71,15 +71,19 @@ app.post("/make-server-e08b724b/chat", async (c) => {
 
   try {
     // Step 1: Call intent detection endpoint
-    const intentUrl = `${c.req.url.replace(/\/chat$/, '/intent')}`;
-    const intentRes = await fetch(intentUrl, {
+    const baseUrl = `https://${SB_URL.replace('https://', '').split('/')[0]}/functions/v1/make-server-e08b724b/intent`;
+    const intentRes = await fetch(baseUrl, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "authorization": c.req.header("authorization") || `Bearer ${SB_ANON}`
+      },
       body: JSON.stringify({ q, history: [] })
     });
 
     if (!intentRes.ok) {
-      console.error(`Intent detection failed: ${intentRes.status}`);
+      const errorText = await intentRes.text();
+      console.error(`Intent detection failed: ${intentRes.status} - ${errorText}`);
       return c.json({
         text: "I'm having trouble understanding your request right now. Please try again.",
         resources: []
@@ -107,35 +111,47 @@ app.post("/make-server-e08b724b/chat", async (c) => {
 
       console.log("Executing search with payload:", JSON.stringify(searchPayload));
 
-      // Call the search endpoint
-      const searchRes = await fetch(`${FUNCS}/rag-search`, {
-        method: "POST",
+      // Query database directly for resources
+      const url = new URL(`${REST}/resource`);
+      url.searchParams.set("select", "id,title,type,section,url,description,date_added,roles,tags,thumbnail_url");
+
+      // Filter by section if provided
+      if (searchPayload.section) {
+        url.searchParams.set("section", `eq.${searchPayload.section}`);
+      }
+
+      // Filter by role if provided and not broad search
+      if (searchPayload.role && !searchPayload.broad) {
+        url.searchParams.set("roles", `cs.{${searchPayload.role}}`);
+      }
+
+      // Combine is_published filter with text search
+      if (searchPayload.query) {
+        url.searchParams.set("and", `(or.(is_published.eq.true,is_published.is.null),or.(title.ilike.*${searchPayload.query}*,description.ilike.*${searchPayload.query}*,tags.cs.{${searchPayload.query}}))`);
+      } else {
+        url.searchParams.set("or", "(is_published.eq.true,is_published.is.null)");
+      }
+
+      url.searchParams.set("limit", `${searchPayload.limit || 10}`);
+      url.searchParams.set("order", "date_added.desc");
+
+      const searchRes = await fetch(url, {
         headers: {
-          "content-type": "application/json",
-          apikey: SB_SVC,
-          authorization: `Bearer ${SB_SVC}`,
-        },
-        body: JSON.stringify(searchPayload)
+          apikey: SB_ANON,
+          Authorization: `Bearer ${SB_ANON}`
+        }
       });
 
       if (!searchRes.ok) {
-        console.error(`Search failed: ${searchRes.status}`);
+        console.error(`Database query failed: ${searchRes.status}`);
         return c.json({
           text: "I couldn't complete the search. Please try again.",
           resources: []
         });
       }
 
-      const searchResult = await searchRes.json();
-      console.log("Search result:", JSON.stringify(searchResult));
-
-      // Extract resources from search result
-      let resources = [];
-      if (Array.isArray(searchResult.resources)) {
-        resources = searchResult.resources;
-      } else if (Array.isArray(searchResult)) {
-        resources = searchResult;
-      }
+      const resources = await searchRes.json();
+      console.log("Search result:", JSON.stringify(resources));
 
       // Step 3: Generate a helpful AI message using Claude
       let aiMessage = "";
@@ -152,7 +168,7 @@ app.post("/make-server-e08b724b/chat", async (c) => {
                 "content-type": "application/json"
               },
               body: JSON.stringify({
-                model: "claude-3-5-sonnet-20241022",
+                model: "claude-3-haiku-20240307",
                 max_tokens: 512,
                 temperature: 0.3,
                 messages: [{
@@ -458,7 +474,7 @@ Rules for intent detection:
           "content-type": "application/json"
         },
         body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
+          model: "claude-3-haiku-20240307",
           max_tokens: 1024,
           temperature: 0.1,
           system: sys,
