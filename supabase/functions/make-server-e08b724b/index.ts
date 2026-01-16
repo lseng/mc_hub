@@ -9,6 +9,7 @@ const SB_SVC  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || SB_ANON; // prefer 
 const FUNCS   = `${SB_URL}/functions/v1`;
 const REST    = `${SB_URL}/rest/v1`;
 const GEMINI  = Deno.env.get("GEMINI_API_KEY") || "";
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "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";
 
 const ALLOW = new Set([
   "chat",
@@ -63,31 +64,151 @@ app.get("/make-server-e08b724b/resources", async (c) => {
 
 // ---------- Clean aliases to internal functions ----------
 
-// /chat -> functions/v1/chat  (normalize answer -> text)
+// /chat -> intent detection + RAG search with direct resource presentation
 app.post("/make-server-e08b724b/chat", async (c) => {
   const body = await c.req.json().catch(() => ({}));
-  const upstream = await fetch(`${FUNCS}/chat`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      apikey: SB_SVC,
-      authorization: `Bearer ${SB_SVC}`,
-    },
-    body: JSON.stringify(body || {}),
-  });
+  const { q = "", role = "member" } = body;
 
-  const raw = await upstream.json().catch(() => ({}));
-  if (raw && typeof raw === "object") {
-    // ensure UI can always read `text`
-    raw.text = raw.text ?? raw.answer ?? "";
-  }
-  return new Response(JSON.stringify(raw), {
-    status: upstream.status,
-    headers: {
-      "content-type": "application/json",
-      "access-control-allow-origin": "*",
+  try {
+    // Step 1: Call intent detection endpoint
+    const intentUrl = `${c.req.url.replace(/\/chat$/, '/intent')}`;
+    const intentRes = await fetch(intentUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ q, history: [] })
+    });
+
+    if (!intentRes.ok) {
+      console.error(`Intent detection failed: ${intentRes.status}`);
+      return c.json({
+        text: "I'm having trouble understanding your request right now. Please try again.",
+        resources: []
+      });
     }
-  });
+
+    const intent = await intentRes.json();
+    console.log("Intent detection result:", JSON.stringify(intent));
+
+    // Step 2: If action is "call", execute the search
+    if (intent.action === "call" && Array.isArray(intent.calls) && intent.calls.length > 0) {
+      const searchCall = intent.calls[0];
+      const searchArgs = searchCall.args || {};
+
+      // Construct search payload
+      const searchPayload = {
+        query: searchArgs.query || q,
+        role: searchArgs.role || role,
+        section: searchArgs.section || null,
+        apply: searchArgs.apply || false,
+        broad: searchArgs.broad !== false, // default to true
+        exact: searchArgs.exact || false,
+        limit: 10
+      };
+
+      console.log("Executing search with payload:", JSON.stringify(searchPayload));
+
+      // Call the search endpoint
+      const searchRes = await fetch(`${FUNCS}/rag-search`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          apikey: SB_SVC,
+          authorization: `Bearer ${SB_SVC}`,
+        },
+        body: JSON.stringify(searchPayload)
+      });
+
+      if (!searchRes.ok) {
+        console.error(`Search failed: ${searchRes.status}`);
+        return c.json({
+          text: "I couldn't complete the search. Please try again.",
+          resources: []
+        });
+      }
+
+      const searchResult = await searchRes.json();
+      console.log("Search result:", JSON.stringify(searchResult));
+
+      // Extract resources from search result
+      let resources = [];
+      if (Array.isArray(searchResult.resources)) {
+        resources = searchResult.resources;
+      } else if (Array.isArray(searchResult)) {
+        resources = searchResult;
+      }
+
+      // Step 3: Generate a helpful AI message using Claude
+      let aiMessage = "";
+      if (resources.length > 0) {
+        // Create a summary of the resources using Claude
+        try {
+          const summarizeRes = await fetch(
+            "https://api.anthropic.com/v1/messages",
+            {
+              method: "POST",
+              headers: {
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json"
+              },
+              body: JSON.stringify({
+                model: "claude-3-5-sonnet-20241022",
+                max_tokens: 512,
+                temperature: 0.3,
+                messages: [{
+                  role: "user",
+                  content: `User asked: "${q}"
+
+I found ${resources.length} resource(s):
+${resources.slice(0, 5).map((r: any) => `- ${r.title} (${r.type}): ${r.description || 'No description'}`).join('\n')}
+
+Write a brief, friendly 1-2 sentence message explaining what resources were found. Be specific about what types of resources and how they relate to the user's query. Don't say "I found" - just describe what's available.`
+                }]
+              })
+            }
+          );
+
+          if (summarizeRes.ok) {
+            const summarizeData = await summarizeRes.json();
+            aiMessage = summarizeData?.content?.[0]?.text ?? "";
+          }
+        } catch (err) {
+          console.error("Failed to generate AI summary:", err);
+        }
+
+        // Fallback message if AI generation fails
+        if (!aiMessage) {
+          const resourceTypes = [...new Set(resources.map((r: any) => r.type))];
+          aiMessage = `Here are ${resources.length} resource${resources.length > 1 ? 's' : ''} I found for you, including ${resourceTypes.slice(0, 2).join(' and ')}.`;
+        }
+      } else {
+        aiMessage = "I couldn't find any resources matching your query. Try rephrasing your question or ask me about available forms, documents, or training materials.";
+      }
+
+      return c.json({
+        text: aiMessage,
+        answer: aiMessage,
+        resources: resources,
+        mode: "direct" // Not offer_resources
+      });
+
+    } else {
+      // Step 4: If action is "talk", return the message
+      return c.json({
+        text: intent.message || "Hello! I can help you find resources, forms, and training materials. What are you looking for?",
+        answer: intent.message || "Hello! I can help you find resources, forms, and training materials. What are you looking for?",
+        resources: [],
+        mode: "talk"
+      });
+    }
+
+  } catch (error) {
+    console.error("Chat endpoint error:", error);
+    return c.json({
+      text: "I'm experiencing technical difficulties. Please try again.",
+      resources: []
+    }, 500);
+  }
 });
 
 // /search -> functions/v1/rag-search (straight pass-through)
@@ -256,11 +377,11 @@ app.post("/make-server-e08b724b/render-doc", async (c) => {
     const r = await fetch(exportUrl);
     if (!r.ok) {
       console.log(`Google Docs export failed with status: ${r.status}`);
-      return c.json({ 
-        error: "fetch_failed", 
+      return c.json({
+        error: "fetch_failed",
         message: `Google Docs export failed with status ${r.status}`,
-        status: r.status 
-      }, r.status);
+        status: r.status
+      }, 500);
     }
     
     const html = await r.text();
@@ -269,19 +390,20 @@ app.post("/make-server-e08b724b/render-doc", async (c) => {
     
   } catch (error) {
     console.error('Error fetching Google Doc:', error);
-    return c.json({ 
-      error: "fetch_error", 
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return c.json({
+      error: "fetch_error",
       message: "Network error while fetching document",
-      details: error.message 
+      details: errorMessage
     }, 500);
   }
 });
-// ---------- Intent (JSON function-calling) ----------
+// ---------- Intent (JSON function-calling) using Claude API ----------
 app.post("/make-server-e08b724b/intent", async (c) => {
-  if (!GEMINI) return c.json({ error: "GEMINI_API_KEY missing" }, 500);
+  if (!ANTHROPIC_API_KEY) return c.json({ error: "ANTHROPIC_API_KEY missing" }, 500);
   const { q = "", history = [] } = await c.req.json().catch(() => ({}));
 
-  const sys = `You are an intent router for a church "MC Hub".
+  const sys = `You are an intent router for a church "MC Hub" resource database.
 Return STRICT JSON with this schema, no prose:
 {
   "action": "talk" | "call",
@@ -300,33 +422,98 @@ Return STRICT JSON with this schema, no prose:
     }
   ]
 }
-Rules:
-- Use action:"call" with a single search call whenever the user is looking for something (forms, applications, guides, docs, videos, where to find/get/show…).
-- Set exact=true for asks like "MC Adjustment Form", "Coach Application", quoted titles, or short name+kind.
-- If the user is just greeting or unclear, use action:"talk" and a short friendly "message".`;
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI}`,
-    {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: `${sys}\n\nUser: ${q}` }]}],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.1 }
-      })
-    }
-  );
+Rules for intent detection:
+- Use action:"call" with a search call whenever the user is looking for resources. This includes queries with these patterns:
+  * "show me", "find", "where is", "what forms", "what resources", "resources for", "forms for", "training for", "guides for"
+  * "I need", "looking for", "search for", "get me", "pull up", "display"
+  * Role mentions: "coach", "leader", "apprentice", "member"
+  * Section mentions: "forms", "documents", "media", "training", "guides", "videos", "materials"
+  * Application-related: "application", "apply", "sign up"
 
-  const data = await res.json().catch(() => ({}));
-  const text = data?.candidates?.[0]?.content?.parts?.map((p:any)=>p.text).join("") ?? "";
+- When action is "call", construct the search args:
+  * query: extract the main search terms (e.g., "forms for leaders" → query: "forms", role: "leader")
+  * role: extract from user query if mentioned ("coach", "leader", "apprentice", "member")
+  * section: extract if mentioned ("forms", "documents", "media")
+  * exact: true only for specific titled items like "MC Adjustment Form" or quoted titles
+  * broad: true for general queries without specific constraints
+  * apply: true if query mentions "application" or "apply"
+
+- Use action:"talk" ONLY for:
+  * Pure greetings: "hi", "hello", "hey", "good morning"
+  * General questions without search intent: "what is MC Hub?", "how does this work?"
+  * Completely unclear queries that need clarification
+
+- Default to action:"call" when in doubt - it's better to search and return results than to ask clarifying questions.
+- For action:"talk", provide a brief, friendly message.`;
+
   try {
+    const res = await fetch(
+      "https://api.anthropic.com/v1/messages",
+      {
+        method: "POST",
+        headers: {
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "claude-3-5-sonnet-20241022",
+          max_tokens: 1024,
+          temperature: 0.1,
+          system: sys,
+          messages: [{
+            role: "user",
+            content: `User query: ${q}\n\nReturn JSON intent classification.`
+          }]
+        })
+      }
+    );
+
+    if (!res.ok) {
+      console.error(`Claude API error: ${res.status} ${res.statusText}`);
+      const errorText = await res.text();
+      console.error(`Error details: ${errorText}`);
+      return c.json({
+        error: "Claude API request failed",
+        status: res.status,
+        details: errorText
+      }, 500);
+    }
+
+    const data = await res.json();
+    const text = data?.content?.[0]?.text ?? "";
+
+    // Parse the JSON response
     const j = JSON.parse(text);
+
+    // Normalize the response
     j.action = j.action === "call" ? "call" : "talk";
     j.message = typeof j.message === "string" ? j.message : "";
     j.calls = Array.isArray(j.calls) ? j.calls.filter((x:any)=>x?.name==="search") : [];
+
     return c.json(j);
-  } catch {
-    return c.json({ action: "talk", message: "Got it. Tell me the role or topic and I’ll pull the right forms, trainings, or guides.", calls: [] });
+
+  } catch (error) {
+    console.error("Intent detection error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error details:", errorMessage);
+    // Fallback: treat as a search query by default
+    return c.json({
+      action: "call",
+      message: "I'll search for that.",
+      calls: [{
+        name: "search",
+        args: {
+          query: q,
+          role: null,
+          apply: false,
+          section: null,
+          broad: true,
+          exact: false
+        }
+      }]
+    });
   }
 });
 // ---------- Google Calendar Events ----------
@@ -359,7 +546,7 @@ app.get("/make-server-e08b724b/calendar-events", async (c) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Google Calendar API error: ${response.status} - ${errorText}`);
-      return c.json({ error: "Failed to fetch calendar events", details: errorText }, response.status);
+      return c.json({ error: "Failed to fetch calendar events", details: errorText }, 500);
     }
 
     const data = await response.json();
@@ -429,7 +616,8 @@ app.get("/make-server-e08b724b/calendar-events", async (c) => {
     return c.json(dateItems);
   } catch (error) {
     console.error("Error fetching calendar events:", error);
-    return c.json({ error: "Failed to fetch calendar events", message: error.message }, 500);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return c.json({ error: "Failed to fetch calendar events", message: errorMessage }, 500);
   }
 });
 
