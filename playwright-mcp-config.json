@@ -6,7 +6,7 @@
     },
     "contextOptions": {
       "recordVideo": {
-        "dir": "./videos",
+        "dir": "/Users/leoneng/Library/Mobile Documents/com~apple~CloudDocs/MC Hub/trees/f45c6e6a/videos",
         "size": {
           "width": 1920,
           "height": 1080
