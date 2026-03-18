@@ -14,10 +14,17 @@ function getEventIcon(date: DateItem) {
 }
 
 function getEventColor(date: DateItem) {
-  if (date.isTraining) return 'bg-purple-50 text-purple-700 border-purple-200';
-  if (date.isExpo) return 'bg-blue-50 text-blue-700 border-blue-200';
-  if (date.isDeadline) return 'bg-red-50 text-red-700 border-red-200'; 
-  return 'bg-gray-50 text-gray-700 border-gray-200';
+  if (date.isTraining) return 'bg-gradient-to-br from-purple-50 via-violet-50 to-purple-100 text-purple-800 border-purple-200/50';
+  if (date.isExpo) return 'bg-gradient-to-br from-blue-50 via-sky-50 to-blue-100 text-blue-800 border-blue-200/50';
+  if (date.isDeadline) return 'bg-gradient-to-br from-red-50 via-rose-50 to-red-100 text-red-800 border-red-200/50'; 
+  return 'bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 text-gray-800 border-gray-200/50';
+}
+
+function getEventGradient(date: DateItem) {
+  if (date.isTraining) return 'bg-gradient-to-br from-purple-400 via-violet-400 to-purple-500';
+  if (date.isExpo) return 'bg-gradient-to-br from-blue-400 via-sky-400 to-blue-500';
+  if (date.isDeadline) return 'bg-gradient-to-br from-red-400 via-rose-400 to-red-500';
+  return 'bg-gradient-to-br from-gray-400 via-slate-400 to-gray-500';
 }
 
 function isUpcoming(dateString: string, year: number): boolean {
@@ -65,6 +72,7 @@ export function UpcomingEvents({ dates }: UpcomingEventsProps) {
         {upcomingEvents.map((date, index) => {
           const Icon = getEventIcon(date);
           const colorClass = getEventColor(date);
+          const gradientClass = getEventGradient(date);
           
           return (
             <motion.div
@@ -72,13 +80,18 @@ export function UpcomingEvents({ dates }: UpcomingEventsProps) {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
+              whileHover={{ scale: 1.02, y: -1 }}
               className={`
-                p-3 rounded-lg border transition-all duration-200 hover:shadow-md
+                relative p-3 rounded-xl border transition-all duration-300 hover:shadow-lg overflow-hidden backdrop-blur-sm
                 ${colorClass}
               `}
             >
-              <div className="flex items-start gap-3">
-                <Icon size={16} className="flex-shrink-0 mt-0.5" />
+              {/* Beautiful gradient overlay */}
+              <div className={`absolute inset-0 opacity-0 hover:opacity-5 transition-opacity duration-300 ${gradientClass}`} />
+              <div className="relative z-10 flex items-start gap-3">
+                <div className={`flex-shrink-0 p-1.5 rounded-lg ${gradientClass} shadow-sm`}>
+                  <Icon size={14} className="text-white" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium text-sm">
@@ -97,7 +110,7 @@ export function UpcomingEvents({ dates }: UpcomingEventsProps) {
                     </div>
                   )}
                 </div>
-                <button
+                <motion.button
                   onClick={() => {
                     // Parse date and create calendar event
                     const eventDate = new Date(`${date.date} ${date.year}`);
@@ -109,11 +122,14 @@ export function UpcomingEvents({ dates }: UpcomingEventsProps) {
                     const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(date.title)}&dates=${startDate}/${endDate}&details=${encodeURIComponent(date.description || '')}&ctz=America/Los_Angeles`;
                     window.open(googleCalendarUrl, '_blank');
                   }}
-                  className="p-1.5 hover:bg-white/60 rounded-md transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className={`relative p-2 rounded-lg transition-all duration-200 hover:shadow-md ${gradientClass} shadow-sm group`}
                   title="Add to calendar"
                 >
-                  <CalendarPlus size={14} />
-                </button>
+                  <CalendarPlus size={14} className="text-white" />
+                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
+                </motion.button>
               </div>
             </motion.div>
           );
