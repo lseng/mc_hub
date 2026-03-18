@@ -1,0 +1,272 @@
+/* FullCalendar Custom Styles for MC Hub */
+
+/* Main calendar styling */
+.fc {
+  height: 100% !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Header styling */
+.fc-header-toolbar {
+  display: none !important; /* We use custom header */
+}
+
+/* Day headers */
+.fc-col-header-cell {
+  background-color: #F9FAFB;
+  border-color: #E5E7EB;
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: #6B7280;
+  padding: 12px 8px;
+}
+
+/* Day cells */
+.fc-daygrid-day {
+  border-color: #E5E7EB;
+}
+
+.fc-daygrid-day-number {
+  color: #111827;
+  font-weight: 400;
+  font-size: 14px;
+  padding: 8px;
+}
+
+/* Today highlighting */
+.fc-day-today {
+  background-color: #EFF6FF !important;
+}
+
+.fc-day-today .fc-daygrid-day-number {
+  background-color: #2563EB;
+  color: white;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px;
+}
+
+/* Other month days */
+.fc-day-other .fc-daygrid-day-number {
+  color: #D1D5DB;
+}
+
+/* Event styling */
+.fc-event {
+  border: none !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  margin: 1px 2px !important;
+  padding: 2px 6px !important;
+}
+
+.fc-event-title {
+  font-weight: 500;
+}
+
+/* Month view specific */
+.fc-daygrid-event {
+  border-radius: 4px !important;
+  margin: 1px 2px !important;
+  padding: 1px 4px !important;
+}
+
+.fc-daygrid-event-harness {
+  margin-bottom: 2px;
+}
+
+/* More link styling */
+.fc-daygrid-more-link {
+  color: #2563EB;
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.fc-daygrid-more-link:hover {
+  background-color: #EFF6FF;
+  text-decoration: none;
+}
+
+/* Week/Day view styling */
+.fc-timegrid-slot {
+  border-color: #F3F4F6;
+  height: 48px;
+}
+
+.fc-timegrid-slot-major {
+  border-color: #E5E7EB;
+}
+
+.fc-timegrid-slot-label {
+  color: #9CA3AF;
+  font-size: 12px;
+  text-align: right;
+  padding-right: 8px;
+}
+
+.fc-timegrid-axis {
+  width: 72px;
+}
+
+/* All-day section */
+.fc-timegrid-divider {
+  border-color: #E5E7EB;
+  padding: 8px 0;
+}
+
+.fc-timegrid-all-day {
+  background-color: #FAFAFA;
+}
+
+/* Current time indicator */
+.fc-timegrid-now-indicator-line {
+  border-color: #EF4444;
+  border-width: 2px;
+}
+
+.fc-timegrid-now-indicator-arrow {
+  border-color: #EF4444;
+}
+
+/* List view styling */
+.fc-list-event {
+  border: none !important;
+  padding: 12px !important;
+}
+
+.fc-list-event:hover {
+  background-color: #F9FAFB !important;
+}
+
+.fc-list-event-dot {
+  width: 8px;
+  height: 8px;
+  margin-right: 12px;
+  border-radius: 50%;
+}
+
+.fc-list-event-title {
+  font-weight: 500;
+  color: #111827;
+}
+
+.fc-list-event-time {
+  color: #6B7280;
+  font-size: 13px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .fc-col-header-cell {
+    font-size: 11px;
+    padding: 8px 4px;
+  }
+  
+  .fc-daygrid-day-number {
+    font-size: 13px;
+    padding: 6px;
+  }
+  
+  .fc-event {
+    font-size: 11px !important;
+    padding: 1px 4px !important;
+  }
+  
+  .fc-timegrid-slot {
+    height: 40px;
+  }
+  
+  .fc-timegrid-axis {
+    width: 60px;
+  }
+  
+  .fc-timegrid-slot-label {
+    font-size: 11px;
+    padding-right: 6px;
+  }
+}
+
+/* Scrollbar styling for calendar */
+.fc-scroller::-webkit-scrollbar {
+  width: 6px;
+}
+
+.fc-scroller::-webkit-scrollbar-track {
+  background: #F9FAFB;
+}
+
+.fc-scroller::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 3px;
+}
+
+.fc-scroller::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* Popover styling */
+.fc-popover {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.fc-popover-header {
+  background-color: #F9FAFB;
+  border-bottom: 1px solid #E5E7EB;
+  padding: 12px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.fc-popover-body {
+  padding: 8px;
+}
+
+/* Custom event colors for different types */
+.fc-event.event-training {
+  background-color: #7C3AED !important;
+  border-color: #7C3AED !important;
+  color: white !important;
+}
+
+.fc-event.event-expo {
+  background-color: #2563EB !important;
+  border-color: #2563EB !important;
+  color: white !important;
+}
+
+.fc-event.event-deadline {
+  background-color: #DC2626 !important;
+  border-color: #DC2626 !important;
+  color: white !important;
+}
+
+.fc-event.event-race {
+  background-color: #059669 !important;
+  border-color: #059669 !important;
+  color: white !important;
+}
+
+.fc-event.event-social {
+  background-color: #D97706 !important;
+  border-color: #D97706 !important;
+  color: white !important;
+}
+
+.fc-event.event-meeting {
+  background-color: #0891B2 !important;
+  border-color: #0891B2 !important;
+  color: white !important;
+}

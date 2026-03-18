@@ -4,9 +4,8 @@ import { FileText, Calendar as CalendarIcon } from 'lucide-react';
 import { ResourceLibrary } from '../ResourceLibrary';
 import { ChatInterface } from '../ChatInterface';
 import { ResourceViewer } from '../ResourceViewer';
-import { Calendar } from '../Calendar';
+import { CalendarPage } from './CalendarPage';
 import { Resource } from '../../types/app';
-import { fallbackDates } from '../../data/importantDates';
 
 interface DesktopLayoutProps {
   selectedResource: Resource | null;
@@ -28,6 +27,7 @@ export function DesktopLayout({
   onToggleChat
 }: DesktopLayoutProps) {
   const [activeTab, setActiveTab] = useState<'resources' | 'calendar'>('resources');
+  
   return (
     <div className="h-dvh bg-[#ffffff] flex flex-col overflow-hidden">
       {/* Tab Navigation */}
@@ -58,53 +58,49 @@ export function DesktopLayout({
         </div>
       </div>
 
-      {/* Main Content Section - Reduced padding and gap */}
+      {/* Main Content Section */}
       <div className="flex-1 flex flex-col lg:flex-row gap-3 px-3 lg:px-6 pb-3 overflow-hidden min-h-0">
-        {/* Left Panel - Content based on active tab */}
-        <div 
-          ref={scrollContainerRef}
-          className="w-full lg:w-[480px] flex-shrink-0 px-1 overflow-y-auto overflow-x-hidden"
-        >
-          {activeTab === 'resources' ? (
-            <ResourceLibrary 
-              onResourceClick={onResourceClick} 
-              selectedResourceId={selectedResource?.id || null}
-            />
-          ) : (
-            <div className="py-4">
-              <Calendar dates={fallbackDates} />
-            </div>
-          )}
-        </div>
-        
-        {/* Right Panel - Chat Interface and Resource Viewer */}
-        <div className="flex-1 min-w-0 flex flex-col overflow-hidden relative">
-          {/* Chat Interface - Always mounted, visibility controlled by CSS */}
-          <div className={`absolute inset-0 ${selectedResource ? 'invisible opacity-0 pointer-events-none' : 'visible opacity-100 pointer-events-auto'} transition-all duration-200`}>
-            <ChatInterface 
-              key="persistent-chat" 
-              onResourceClick={onChatResourceClick}
-            />
-          </div>
-          
-          {/* Resource Viewer - Only shown when resource is selected */}
-          {selectedResource && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="absolute inset-0 opacity-100 pointer-events-auto"
+        {activeTab === 'resources' ? (
+          <>
+            {/* Left Panel - Resource Library */}
+            <div 
+              ref={scrollContainerRef}
+              className="w-full lg:w-[480px] flex-shrink-0 px-1 overflow-y-auto overflow-x-hidden"
             >
-              <ResourceViewer 
-                resource={selectedResource} 
-                onBack={onBackToResources}
-                isChatExpanded={isChatExpanded}
-                onToggleChat={onToggleChat}
+              <ResourceLibrary 
+                onResourceClick={onResourceClick} 
+                selectedResourceId={selectedResource?.id || null}
               />
-            </motion.div>
-          )}
-        </div>
+            </div>
+            
+            {/* Right Panel - Chat Interface and Resource Viewer */}
+            <div className="flex-1 min-w-0 flex flex-col overflow-hidden relative">
+              {/* Chat Interface - Always mounted, visibility controlled by CSS */}
+              <div className={`absolute inset-0 ${selectedResource ? 'invisible opacity-0 pointer-events-none' : 'visible opacity-100 pointer-events-auto'} transition-all duration-200`}>
+                <ChatInterface 
+                  key="persistent-chat" 
+                  onResourceClick={onChatResourceClick}
+                />
+              </div>
+              
+              {/* Resource Viewer - Only visible when resource is selected */}
+              <div className={`absolute inset-0 ${selectedResource ? 'visible opacity-100 pointer-events-auto' : 'invisible opacity-0 pointer-events-none'} transition-all duration-200`}>
+                <ResourceViewer 
+                  resource={selectedResource}
+                  onBack={onBackToResources}
+                  onChatResourceClick={onChatResourceClick}
+                  isChatExpanded={isChatExpanded}
+                  onToggleChat={onToggleChat}
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Full-width Calendar */
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <CalendarPage />
+          </div>
+        )}
       </div>
     </div>
   );

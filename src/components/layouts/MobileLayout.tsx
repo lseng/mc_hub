@@ -3,9 +3,8 @@ import { X, FileText, Calendar as CalendarIcon } from 'lucide-react';
 import { ResourceLibrary } from '../ResourceLibrary';
 import { ChatInterface } from '../ChatInterface';
 import { ResourceViewer } from '../ResourceViewer';
-import { Calendar } from '../Calendar';
+import { CalendarPage } from './CalendarPage';
 import { Resource, MobileView } from '../../types/app';
-import { fallbackDates } from '../../data/importantDates';
 
 interface MobileLayoutProps {
   selectedResource: Resource | null;
@@ -63,11 +62,9 @@ export function MobileLayout({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.3 }}
-              className="absolute inset-0 px-3 pb-20 overflow-y-auto overflow-x-hidden"
+              className="absolute inset-0 pb-20 overflow-hidden"
             >
-              <div className="px-1 py-4">
-                <Calendar dates={fallbackDates} />
-              </div>
+              <CalendarPage />
             </motion.div>
           )}
 
