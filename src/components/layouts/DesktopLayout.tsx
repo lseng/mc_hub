@@ -31,7 +31,7 @@ export function DesktopLayout({
   return (
     <div className="h-dvh bg-[#ffffff] flex flex-col overflow-hidden">
       {/* Tab Navigation */}
-      <div className="bg-white border-b border-gray-200 px-6 pt-6 pb-4">
+      <div className="bg-white px-6 pt-6 pb-4">
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit mb-6">
           <button
             onClick={() => setActiveTab('resources')}
