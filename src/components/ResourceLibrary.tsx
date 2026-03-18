@@ -349,10 +349,7 @@ export function ResourceLibrary({ onResourceClick, selectedResourceId, onToggleM
           />
         </div>
         
-        {/* Show upcoming events when not searching */}
-        {!searchQuery && (
-          <UpcomingEvents dates={importantDates} />
-        )}
+
 
         {/* Search/Filter Status */}
         <div className="w-full text-sm text-gray-600 min-h-[20px]">

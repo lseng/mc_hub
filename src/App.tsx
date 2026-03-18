@@ -32,6 +32,12 @@ export default function App() {
     }
   };
 
+  const handleNavigateToView = (view: MobileView) => {
+    setMobileView(view);
+    setSelectedResource(null);
+    setShowMobileChat(false);
+  };
+
   const handleChatResourceClick = (resource: Resource) => {
     setSelectedResource(resource);
     if (isMobile) {
@@ -106,6 +112,7 @@ export default function App() {
       onChatResourceClick={handleChatResourceClick}
       onBackToResources={handleBackToResources}
       onToggleMobileChat={handleToggleMobileChat}
+      onNavigateToView={handleNavigateToView}
       isChatExpanded={isChatExpanded}
       onToggleChat={setIsChatExpanded}
     />

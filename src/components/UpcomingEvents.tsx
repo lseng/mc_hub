@@ -13,34 +13,45 @@ function getEventIcon(date: DateItem) {
   return Calendar;
 }
 
-function getEventColor(date: DateItem) {
-  if (date.isTraining) return 'bg-gradient-to-br from-purple-50 via-violet-50 to-purple-100 text-purple-800 border-purple-200/50';
-  if (date.isExpo) return 'bg-gradient-to-br from-blue-50 via-sky-50 to-blue-100 text-blue-800 border-blue-200/50';
-  if (date.isDeadline) return 'bg-gradient-to-br from-red-50 via-rose-50 to-red-100 text-red-800 border-red-200/50'; 
-  return 'bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 text-gray-800 border-gray-200/50';
-}
-
-function getEventGradient(date: DateItem) {
-  if (date.isTraining) return 'bg-gradient-to-br from-purple-400 via-violet-400 to-purple-500';
-  if (date.isExpo) return 'bg-gradient-to-br from-blue-400 via-sky-400 to-blue-500';
-  if (date.isDeadline) return 'bg-gradient-to-br from-red-400 via-rose-400 to-red-500';
-  return 'bg-gradient-to-br from-gray-400 via-slate-400 to-gray-500';
+function getEventStyles(date: DateItem) {
+  if (date.isTraining) return {
+    cardBg: 'linear-gradient(to bottom right, #faf5ff, #f5f3ff, #f3e8ff)',
+    textColor: '#6b21a8',
+    borderColor: 'rgba(167, 139, 250, 0.3)',
+    iconBg: 'linear-gradient(to bottom right, #a855f7, #8b5cf6, #9333ea)',
+  };
+  if (date.isExpo) return {
+    cardBg: 'linear-gradient(to bottom right, #eff6ff, #f0f9ff, #dbeafe)',
+    textColor: '#1e40af',
+    borderColor: 'rgba(96, 165, 250, 0.3)',
+    iconBg: 'linear-gradient(to bottom right, #60a5fa, #38bdf8, #3b82f6)',
+  };
+  if (date.isDeadline) return {
+    cardBg: 'linear-gradient(to bottom right, #fef2f2, #fff1f2, #fecdd3)',
+    textColor: '#991b1b',
+    borderColor: 'rgba(252, 165, 165, 0.3)',
+    iconBg: 'linear-gradient(to bottom right, #ef4444, #f43f5e, #dc2626)',
+  };
+  return {
+    cardBg: 'linear-gradient(to bottom right, #f9fafb, #f8fafc, #f3f4f6)',
+    textColor: '#1f2937',
+    borderColor: 'rgba(209, 213, 219, 0.5)',
+    iconBg: 'linear-gradient(to bottom right, #9ca3af, #94a3b8, #6b7280)',
+  };
 }
 
 function isUpcoming(dateString: string, year: number): boolean {
   try {
-    // Parse date like "March 1" with current or given year
     const now = new Date();
     const eventDate = new Date(`${dateString} ${year}`);
     const daysDiff = Math.ceil((eventDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    return daysDiff >= -1 && daysDiff <= 60; // Show events from yesterday up to 60 days ahead
+    return daysDiff >= -1 && daysDiff <= 60;
   } catch {
     return false;
   }
 }
 
 export function UpcomingEvents({ dates }: UpcomingEventsProps) {
-  // Filter to only upcoming events
   const upcomingEvents = dates
     .filter(date => isUpcoming(date.date, date.year))
     .sort((a, b) => {
@@ -52,7 +63,7 @@ export function UpcomingEvents({ dates }: UpcomingEventsProps) {
         return 0;
       }
     })
-    .slice(0, 3); // Show next 3 events
+    .slice(0, 3);
 
   if (upcomingEvents.length === 0) {
     return null;
@@ -71,8 +82,7 @@ export function UpcomingEvents({ dates }: UpcomingEventsProps) {
       <div className="space-y-2">
         {upcomingEvents.map((date, index) => {
           const Icon = getEventIcon(date);
-          const colorClass = getEventColor(date);
-          const gradientClass = getEventGradient(date);
+          const styles = getEventStyles(date);
           
           return (
             <motion.div
@@ -81,15 +91,18 @@ export function UpcomingEvents({ dates }: UpcomingEventsProps) {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
               whileHover={{ scale: 1.02, y: -1 }}
-              className={`
-                relative p-3 rounded-xl border transition-all duration-300 hover:shadow-lg overflow-hidden backdrop-blur-sm
-                ${colorClass}
-              `}
+              className="relative p-3 rounded-xl border transition-all duration-300 hover:shadow-lg overflow-hidden backdrop-blur-sm"
+              style={{
+                background: styles.cardBg,
+                borderColor: styles.borderColor,
+                color: styles.textColor,
+              }}
             >
-              {/* Beautiful gradient overlay */}
-              <div className={`absolute inset-0 opacity-0 hover:opacity-5 transition-opacity duration-300 ${gradientClass}`} />
               <div className="relative z-10 flex items-start gap-3">
-                <div className={`flex-shrink-0 p-1.5 rounded-lg ${gradientClass} shadow-sm`}>
+                <div 
+                  className="flex-shrink-0 p-1.5 rounded-lg shadow-sm"
+                  style={{ background: styles.iconBg }}
+                >
                   <Icon size={14} className="text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -97,7 +110,10 @@ export function UpcomingEvents({ dates }: UpcomingEventsProps) {
                     <span className="font-medium text-sm">
                       {date.date}
                     </span>
-                    <span className="text-xs px-1.5 py-0.5 bg-white/60 rounded">
+                    <span 
+                      className="text-xs px-1.5 py-0.5 rounded"
+                      style={{ background: 'rgba(255,255,255,0.6)' }}
+                    >
                       {date.semester} {date.year}
                     </span>
                   </div>
@@ -105,14 +121,13 @@ export function UpcomingEvents({ dates }: UpcomingEventsProps) {
                     {date.title}
                   </div>
                   {date.description && (
-                    <div className="text-xs opacity-75">
+                    <div className="text-xs" style={{ opacity: 0.75 }}>
                       {date.description}
                     </div>
                   )}
                 </div>
                 <motion.button
                   onClick={() => {
-                    // Parse date and create calendar event
                     const eventDate = new Date(`${date.date} ${date.year}`);
                     const startDate = eventDate.toLocaleDateString('en-CA').replace(/-/g, '');
                     const nextDay = new Date(eventDate);
@@ -124,11 +139,15 @@ export function UpcomingEvents({ dates }: UpcomingEventsProps) {
                   }}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
-                  className={`relative p-2 rounded-lg transition-all duration-200 hover:shadow-md ${gradientClass} shadow-sm group`}
+                  className="relative p-2 rounded-lg transition-all duration-200 hover:shadow-md shadow-sm group"
+                  style={{ background: styles.iconBg }}
                   title="Add to calendar"
                 >
                   <CalendarPlus size={14} className="text-white" />
-                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
+                  <div 
+                    className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ background: 'rgba(255,255,255,0.2)' }}
+                  />
                 </motion.button>
               </div>
             </motion.div>

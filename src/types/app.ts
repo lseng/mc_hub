@@ -24,4 +24,4 @@ export interface DateItem {
   isExpo?: boolean;
 }
 
-export type MobileView = 'resources' | 'resource-detail';
+export type MobileView = 'resources' | 'resource-detail' | 'calendar';

@@ -1,9 +1,11 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { X } from 'lucide-react';
+import { X, FileText, Calendar as CalendarIcon } from 'lucide-react';
 import { ResourceLibrary } from '../ResourceLibrary';
 import { ChatInterface } from '../ChatInterface';
 import { ResourceViewer } from '../ResourceViewer';
+import { Calendar } from '../Calendar';
 import { Resource, MobileView } from '../../types/app';
+import { fallbackDates } from '../../data/importantDates';
 
 interface MobileLayoutProps {
   selectedResource: Resource | null;
@@ -13,6 +15,7 @@ interface MobileLayoutProps {
   onChatResourceClick: (resource: Resource) => void;
   onBackToResources: () => void;
   onToggleMobileChat: () => void;
+  onNavigateToView: (view: MobileView) => void;
   isChatExpanded: boolean;
   onToggleChat: (expanded: boolean) => void;
 }
@@ -25,6 +28,7 @@ export function MobileLayout({
   onChatResourceClick,
   onBackToResources,
   onToggleMobileChat,
+  onNavigateToView,
   isChatExpanded,
   onToggleChat
 }: MobileLayoutProps) {
@@ -43,15 +47,30 @@ export function MobileLayout({
               className="absolute inset-0 px-3 pb-20 overflow-y-auto overflow-x-hidden"
             >
               <div className="px-1">
-                <ResourceLibrary 
-                  onResourceClick={onResourceClick} 
+                <ResourceLibrary
+                  onResourceClick={onResourceClick}
                   selectedResourceId={selectedResource?.id || null}
                   onToggleMobileChat={onToggleMobileChat}
                 />
               </div>
             </motion.div>
           )}
-          
+
+          {mobileView === 'calendar' && (
+            <motion.div
+              key="calendar"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3 }}
+              className="absolute inset-0 px-3 pb-20 overflow-y-auto overflow-x-hidden"
+            >
+              <div className="px-1 py-4">
+                <Calendar dates={fallbackDates} />
+              </div>
+            </motion.div>
+          )}
+
           {mobileView === 'resource-detail' && selectedResource && (
             <motion.div
               key="resource-detail"
@@ -61,8 +80,8 @@ export function MobileLayout({
               transition={{ duration: 0.3 }}
               className="absolute inset-0"
             >
-              <ResourceViewer 
-                resource={selectedResource} 
+              <ResourceViewer
+                resource={selectedResource}
                 onBack={onBackToResources}
                 isChatExpanded={isChatExpanded}
                 onToggleChat={onToggleChat}
@@ -86,7 +105,7 @@ export function MobileLayout({
               onClick={() => onToggleMobileChat()}
               className="fixed inset-0 bg-black/20 z-30"
             />
-            
+
             {/* Chat Panel */}
             <motion.div
               initial={{ y: '100%' }}
@@ -94,7 +113,7 @@ export function MobileLayout({
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className="fixed inset-x-0 bottom-0 h-[80vh] bg-white rounded-t-xl shadow-2xl z-40 flex flex-col overflow-hidden touch-pan-y"
-              style={{ 
+              style={{
                 WebkitOverflowScrolling: 'touch',
                 overscrollBehavior: 'contain'
               }}
@@ -108,7 +127,7 @@ export function MobileLayout({
                   <X size={20} className="text-gray-600" />
                 </button>
               </div>
-              
+
               {/* Chat Content */}
               <div className="flex-1 overflow-hidden">
                 <ChatInterface key="persistent-chat" onResourceClick={onChatResourceClick} />
@@ -117,6 +136,41 @@ export function MobileLayout({
           </>
         )}
       </AnimatePresence>
+
+      {/* Bottom Navigation */}
+      {!showMobileChat && mobileView !== 'resource-detail' && (
+        <motion.div
+          initial={{ y: 100 }}
+          animate={{ y: 0 }}
+          className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 safe-area-bottom"
+        >
+          <div className="flex items-center justify-around">
+            <button
+              onClick={() => onNavigateToView('resources')}
+              className={`flex flex-col items-center gap-1 py-2 px-4 rounded-lg transition-colors ${
+                mobileView === 'resources' 
+                  ? 'bg-[#406780] text-white' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <FileText size={20} />
+              <span className="text-xs font-medium">Resources</span>
+            </button>
+            
+            <button
+              onClick={() => onNavigateToView('calendar')}
+              className={`flex flex-col items-center gap-1 py-2 px-4 rounded-lg transition-colors ${
+                mobileView === 'calendar' 
+                  ? 'bg-[#406780] text-white' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <CalendarIcon size={20} />
+              <span className="text-xs font-medium">Calendar</span>
+            </button>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }

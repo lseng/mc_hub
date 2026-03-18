@@ -8,6 +8,13 @@ interface SmartSearchCardProps {
   onSuggestionClick: (suggestion: string) => void;
 }
 
+const iconGradients: Record<string, string> = {
+  'text-blue-600': 'linear-gradient(to bottom right, #60a5fa, #3b82f6)',
+  'text-purple-600': 'linear-gradient(to bottom right, #a855f7, #9333ea)',
+  'text-red-600': 'linear-gradient(to bottom right, #ef4444, #dc2626)',
+  'text-green-600': 'linear-gradient(to bottom right, #4ade80, #16a34a)',
+};
+
 const smartSuggestions = [
   { 
     text: "forms", 
@@ -42,12 +49,22 @@ export function SmartSearchCard({ searchQuery, resourceCount, suggestions, onSug
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border border-blue-100/50 rounded-xl p-4 mb-4 overflow-hidden backdrop-blur-sm"
+      className="relative rounded-xl p-4 mb-4 overflow-hidden backdrop-blur-sm border"
+      style={{
+        background: 'linear-gradient(to right, #eff6ff, #eef2ff, #faf5ff)',
+        borderColor: 'rgba(96, 165, 250, 0.2)',
+      }}
     >
       {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-400/5 via-indigo-400/5 to-purple-400/5" />
+      <div 
+        className="absolute inset-0" 
+        style={{ background: 'linear-gradient(to right, rgba(96,165,250,0.05), rgba(99,102,241,0.05), rgba(168,85,247,0.05))' }}
+      />
       <div className="relative z-10 flex items-center gap-2 mb-3">
-        <div className="p-1.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-sm">
+        <div 
+          className="p-1.5 rounded-lg shadow-sm"
+          style={{ background: 'linear-gradient(to bottom right, #3b82f6, #4f46e5)' }}
+        >
           <Search size={14} className="text-white" />
         </div>
         <span className="font-semibold text-gray-900">
@@ -72,11 +89,24 @@ export function SmartSearchCard({ searchQuery, resourceCount, suggestions, onSug
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => onSuggestionClick(suggestion.text)}
-                className="relative flex items-start gap-2 p-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100/50 hover:border-blue-200/70 transition-all duration-300 text-left hover:shadow-lg hover:bg-white/90 overflow-hidden"
+                className="relative flex items-start gap-2 p-3 rounded-xl border transition-all duration-300 text-left hover:shadow-lg overflow-hidden"
+                style={{
+                  background: 'rgba(255,255,255,0.8)',
+                  borderColor: 'rgba(243,244,246,0.5)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.95)';
+                  e.currentTarget.style.borderColor = 'rgba(96,165,250,0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.8)';
+                  e.currentTarget.style.borderColor = 'rgba(243,244,246,0.5)';
+                }}
               >
-                {/* Subtle hover gradient */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 opacity-0 hover:opacity-100 transition-opacity duration-300" />
-                <div className={`relative z-10 flex-shrink-0 p-1.5 rounded-lg bg-gradient-to-br ${suggestion.color === 'text-blue-600' ? 'from-blue-400 to-blue-600' : suggestion.color === 'text-purple-600' ? 'from-purple-400 to-purple-600' : suggestion.color === 'text-red-600' ? 'from-red-400 to-red-600' : 'from-green-400 to-green-600'} shadow-sm`}>
+                <div 
+                  className="relative z-10 flex-shrink-0 p-1.5 rounded-lg shadow-sm"
+                  style={{ background: iconGradients[suggestion.color] || iconGradients['text-blue-600'] }}
+                >
                   <Icon size={12} className="text-white" />
                 </div>
                 <div className="relative z-10">
