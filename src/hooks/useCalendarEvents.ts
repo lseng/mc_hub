@@ -43,37 +43,48 @@ const eventTypeColors = {
   meeting: { bg: '#0891B2', border: '#0891B2', text: '#FFFFFF' },
 };
 
-// Convert DateItems to FullCalendar events
+// Convert DateItems to FullCalendar events with null safety
 const convertToCalendarEvents = (dates: DateItem[]): CalendarEvent[] => {
-  return dates.map(date => {
-    // Parse date string like "March 15" into proper ISO date
-    const eventDate = new Date(`${date.date} ${date.year}`);
-    const isoDate = eventDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-    
-    const type = date.isTraining ? 'training' 
-                : date.isExpo ? 'expo' 
-                : date.isDeadline ? 'deadline' 
-                : 'meeting';
-    
-    const colors = eventTypeColors[type];
+  return dates
+    .filter(date => date && date.id && date.title && date.date && date.year) // Filter out invalid dates
+    .map(date => {
+      try {
+        // Parse date string like "March 15" into proper ISO date
+        const eventDate = new Date(`${date.date} ${date.year}`);
+        if (isNaN(eventDate.getTime())) {
+          throw new Error('Invalid date');
+        }
+        const isoDate = eventDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+        
+        const type = date.isTraining ? 'training' 
+                    : date.isExpo ? 'expo' 
+                    : date.isDeadline ? 'deadline' 
+                    : 'meeting';
+        
+        const colors = eventTypeColors[type];
 
-    return {
-      id: date.id,
-      title: date.title,
-      start: isoDate,
-      allDay: true,
-      backgroundColor: colors.bg,
-      borderColor: colors.border,
-      textColor: colors.text,
-      className: `event-${type}`,
-      extendedProps: {
-        description: date.description,
-        type,
-        semester: date.semester,
-        year: date.year,
+        return {
+          id: String(date.id),
+          title: String(date.title),
+          start: isoDate,
+          allDay: true,
+          backgroundColor: colors.bg,
+          borderColor: colors.border,
+          textColor: colors.text,
+          className: `event-${type}`,
+          extendedProps: {
+            description: String(date.description || ''),
+            type,
+            semester: String(date.semester),
+            year: Number(date.year),
+          }
+        };
+      } catch (error) {
+        console.warn('Invalid date item:', date, error);
+        return null;
       }
-    };
-  });
+    })
+    .filter(Boolean) as CalendarEvent[]; // Remove null entries
 };
 
 export function useCalendarEvents() {
@@ -91,35 +102,39 @@ export function useCalendarEvents() {
         try {
           const calendarData = await makeServerRequest('/calendar-events');
           if (calendarData && Array.isArray(calendarData) && calendarData.length > 0) {
-            // Convert API response to calendar events
-            const convertedEvents = calendarData.map((event: any) => {
-              const type = event.type || 'meeting';
-              const colors = eventTypeColors[type as keyof typeof eventTypeColors] || eventTypeColors.meeting;
-              
-              return {
-                id: event.id,
-                title: event.title || event.summary,
-                start: event.start || event.dateTime,
-                end: event.end,
-                allDay: event.allDay !== false, // Default to all-day unless explicitly false
-                backgroundColor: colors.bg,
-                borderColor: colors.border,
-                textColor: colors.text,
-                className: `event-${type}`,
-                extendedProps: {
-                  description: event.description || '',
-                  type,
-                  semester: event.semester || '',
-                  year: event.year || new Date().getFullYear(),
-                  location: event.location,
-                  organizer: event.organizer,
-                  attendees: event.attendees
-                }
-              };
-            });
+            // Convert API response to calendar events with proper null checking
+            const convertedEvents = calendarData
+              .filter(event => event && event.id && event.title) // Filter out null/invalid events
+              .map((event: any) => {
+                const type = (event.type && typeof event.type === 'string') ? event.type : 'meeting';
+                const colors = eventTypeColors[type as keyof typeof eventTypeColors] || eventTypeColors.meeting;
+                
+                return {
+                  id: String(event.id),
+                  title: String(event.title || event.summary || 'Untitled Event'),
+                  start: event.start || event.dateTime || new Date().toISOString(),
+                  end: event.end || undefined,
+                  allDay: event.allDay !== false, // Default to all-day unless explicitly false
+                  backgroundColor: colors.bg,
+                  borderColor: colors.border,
+                  textColor: colors.text,
+                  className: `event-${type}`,
+                  extendedProps: {
+                    description: String(event.description || ''),
+                    type,
+                    semester: String(event.semester || ''),
+                    year: Number(event.year) || new Date().getFullYear(),
+                    location: event.location ? String(event.location) : undefined,
+                    organizer: event.organizer ? String(event.organizer) : undefined,
+                    attendees: typeof event.attendees === 'number' ? event.attendees : undefined
+                  }
+                };
+              });
             
-            setEvents(convertedEvents);
-            return;
+            if (convertedEvents.length > 0) {
+              setEvents(convertedEvents);
+              return;
+            }
           }
         } catch (apiError) {
           console.warn('Calendar API failed, falling back to static data:', apiError);

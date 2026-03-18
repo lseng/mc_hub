@@ -78,16 +78,29 @@ export function ProfessionalCalendar({ onEventClick, onDateClick }: Professional
 
   const handleEventClick = useCallback((clickInfo: any) => {
     const event = clickInfo.event;
+    if (!event || !event.id || !event.title) {
+      console.warn('Invalid event clicked:', event);
+      return;
+    }
+    
     const calendarEvent: CalendarEvent = {
-      id: event.id,
-      title: event.title,
-      start: event.start.toISOString(),
+      id: String(event.id),
+      title: String(event.title),
+      start: event.start?.toISOString() || new Date().toISOString(),
       end: event.end?.toISOString(),
-      allDay: event.allDay,
-      backgroundColor: event.backgroundColor,
-      borderColor: event.borderColor,
-      textColor: event.textColor,
-      extendedProps: event.extendedProps
+      allDay: event.allDay || false,
+      backgroundColor: event.backgroundColor || '#2563EB',
+      borderColor: event.borderColor || '#2563EB',
+      textColor: event.textColor || '#FFFFFF',
+      extendedProps: {
+        description: String(event.extendedProps?.description || ''),
+        type: event.extendedProps?.type || 'meeting',
+        semester: String(event.extendedProps?.semester || ''),
+        year: Number(event.extendedProps?.year) || new Date().getFullYear(),
+        location: event.extendedProps?.location,
+        organizer: event.extendedProps?.organizer,
+        attendees: event.extendedProps?.attendees
+      }
     };
     
     setSelectedEvent(calendarEvent);
