@@ -35,10 +35,10 @@ const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const getEventColor = (type: string) => {
   switch (type) {
-    case 'training': return 'bg-purple-100 text-purple-800 border-purple-200';
-    case 'expo': return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'deadline': return 'bg-red-100 text-red-800 border-red-200';
-    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'training': return 'bg-purple-500 text-white border-purple-600';
+    case 'expo': return 'bg-blue-500 text-white border-blue-600';
+    case 'deadline': return 'bg-red-500 text-white border-red-600';
+    default: return 'bg-gray-500 text-white border-gray-600';
   }
 };
 
@@ -81,7 +81,7 @@ export function SimpleCalendar() {
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+      <div className="bg-white border-b border-gray-200 px-6 py-6 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
@@ -109,35 +109,43 @@ export function SimpleCalendar() {
       {/* Calendar Grid */}
       <div className="flex-1 p-6">
         {/* Day headers */}
-        <div className="grid grid-cols-7 gap-1 mb-4">
+        <div className="grid grid-cols-7 gap-0 mb-2 bg-gray-50 rounded-lg overflow-hidden">
           {dayNames.map(day => (
-            <div key={day} className="p-3 text-center text-sm font-medium text-gray-600 uppercase tracking-wide">
+            <div key={day} className="p-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wide border-r border-gray-200 last:border-r-0">
               {day}
             </div>
           ))}
         </div>
         
         {/* Calendar days */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-0 border border-gray-200 rounded-lg overflow-hidden">
           {calendarDays.map((day, index) => (
             <div
               key={index}
-              className={`min-h-[100px] p-2 border border-gray-100 rounded ${
+              className={`min-h-[120px] p-3 border-r border-b border-gray-200 last:border-r-0 ${
+                index >= calendarDays.length - 7 ? 'border-b-0' : ''
+              } ${
                 day ? 'bg-white hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
               }`}
             >
               {day && (
                 <>
-                  <div className="text-sm font-medium text-gray-900 mb-2">
-                    {day.day}
+                  <div className="text-sm font-semibold text-gray-900 mb-3 flex justify-between items-center">
+                    <span>{day.day}</span>
+                    {day.day === 10 && (
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    )}
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     {day.events.map(event => (
                       <div
                         key={event.id}
-                        className={`p-1 rounded text-xs ${getEventColor(event.type)} border`}
+                        className={`p-2 rounded-md text-xs ${getEventColor(event.type)} shadow-sm`}
                       >
-                        <div className="font-medium truncate">{event.title}</div>
+                        <div className="font-semibold truncate leading-tight">{event.title}</div>
+                        {event.description && (
+                          <div className="text-xs opacity-75 mt-1 truncate">{event.description}</div>
+                        )}
                       </div>
                     ))}
                   </div>
