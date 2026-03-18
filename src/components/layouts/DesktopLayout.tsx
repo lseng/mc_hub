@@ -84,15 +84,17 @@ export function DesktopLayout({
               </div>
               
               {/* Resource Viewer - Only visible when resource is selected */}
-              <div className={`absolute inset-0 ${selectedResource ? 'visible opacity-100 pointer-events-auto' : 'invisible opacity-0 pointer-events-none'} transition-all duration-200`}>
-                <ResourceViewer 
-                  resource={selectedResource}
-                  onBack={onBackToResources}
-                  onChatResourceClick={onChatResourceClick}
-                  isChatExpanded={isChatExpanded}
-                  onToggleChat={onToggleChat}
-                />
-              </div>
+              {selectedResource && (
+                <div className="absolute inset-0 visible opacity-100 pointer-events-auto transition-all duration-200">
+                  <ResourceViewer 
+                    resource={selectedResource}
+                    onBack={onBackToResources}
+                    onChatResourceClick={onChatResourceClick}
+                    isChatExpanded={isChatExpanded}
+                    onToggleChat={onToggleChat}
+                  />
+                </div>
+              )}
             </div>
           </>
         ) : (

@@ -20,7 +20,7 @@ interface Resource {
 }
 
 interface ResourceViewerProps {
-  resource: Resource;
+  resource: Resource | null;
   onBack: () => void;
   isChatExpanded?: boolean;
   onToggleChat?: (expanded: boolean) => void;
@@ -32,7 +32,8 @@ function getYouTubeId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-function getEmbedUrl(resource: Resource): string {
+function getEmbedUrl(resource: Resource | null): string {
+  if (!resource) return '';
   const { type, url } = resource;
   
   switch (type) {
@@ -80,10 +81,18 @@ export function ResourceViewer({ resource, onBack, isChatExpanded, onToggleChat 
   const [kbLoadingMessage, setKbLoadingMessage] = useState<string>('Loading...');
 
   const embedUrl = getEmbedUrl(resource);
-  const useIframe = shouldUseIframe(resource.type) && resource.type !== 'google_doc';
+  const useIframe = resource ? shouldUseIframe(resource.type) && resource.type !== 'google_doc' : false;
 
   // Load KB summary with auto-ingest and polling - Only for Google Docs
   useEffect(() => {
+    // Skip when resource is null
+    if (!resource) {
+      setCheckingKB(false);
+      setKbSummaryReady(false);
+      setHasKnowledgeBase(false);
+      setPreloadedSummary(null);
+      return;
+    }
     // Only process KB summaries for Google Docs
     if (resource.type !== 'google_doc') {
       setCheckingKB(false);
@@ -224,10 +233,11 @@ export function ResourceViewer({ resource, onBack, isChatExpanded, onToggleChat 
     };
 
     loadKbSummary({ id: resource.id, url: resource.url });
-  }, [resource.id, resource.url, resource.type]);
+  }, [resource?.id, resource?.url, resource?.type]);
 
   // Fetch Google Doc content when it's a Google Doc
   useEffect(() => {
+    if (!resource) return;
     if (resource.type === 'google_doc') {
       const fetchGoogleDoc = async () => {
         setIsLoadingDoc(true);
@@ -282,7 +292,12 @@ export function ResourceViewer({ resource, onBack, isChatExpanded, onToggleChat 
 
       fetchGoogleDoc();
     }
-  }, [resource.type, resource.url]);
+  }, [resource?.type, resource?.url]);
+
+  // After all hooks: guard against null resource
+  if (!resource) {
+    return null;
+  }
 
   return (
     <motion.div
