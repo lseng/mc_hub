@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { ProfessionalCalendar } from '../ProfessionalCalendar';
+import { SimpleCalendar } from '../SimpleCalendar';
 
 interface CalendarPageProps {
   onBack?: () => void;
@@ -22,10 +22,7 @@ export function CalendarPage({ onBack }: CalendarPageProps) {
       transition={{ duration: 0.3 }}
       className="h-full bg-white"
     >
-      <ProfessionalCalendar
-        onEventClick={handleEventClick}
-        onDateClick={handleDateClick}
-      />
+      <SimpleCalendar />
     </motion.div>
   );
 }

@@ -235,7 +235,7 @@ export function ProfessionalCalendar({ onEventClick, onDateClick }: Professional
           plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
           initialView="dayGridMonth"
           headerToolbar={false} // We use custom header
-          events={calendarEvents}
+          events={calendarEvents.length > 0 ? calendarEvents : []} // Ensure non-empty array
           eventClick={handleEventClick}
           dateClick={handleDateClick}
           height="100%"
@@ -264,6 +264,42 @@ export function ProfessionalCalendar({ onEventClick, onDateClick }: Professional
           dayHeaderClassNames="text-xs font-medium text-gray-600 uppercase tracking-wide py-3"
           eventClassNames="rounded-md text-sm font-medium"
           dayCellClassNames="border-gray-100"
+          // Add error handling
+          eventDidMount={(info) => {
+            // Validate event data when mounting
+            if (!info.event || !info.event.extendedProps) {
+              console.warn('Invalid event mounted:', info.event);
+            }
+          }}
+          // Override internal event processing
+          eventDataTransform={(eventInput) => {
+            // Final safety check before FullCalendar processes events
+            if (!eventInput || typeof eventInput !== 'object') {
+              console.warn('Invalid event input:', eventInput);
+              return null;
+            }
+            
+            return {
+              id: String(eventInput.id || ''),
+              title: String(eventInput.title || 'Untitled'),
+              start: eventInput.start || new Date().toISOString(),
+              end: eventInput.end || undefined,
+              allDay: Boolean(eventInput.allDay),
+              backgroundColor: eventInput.backgroundColor || '#2563EB',
+              borderColor: eventInput.borderColor || '#2563EB',
+              textColor: eventInput.textColor || '#FFFFFF',
+              className: eventInput.className || '',
+              extendedProps: {
+                type: eventInput.extendedProps?.type || 'meeting',
+                description: String(eventInput.extendedProps?.description || ''),
+                semester: String(eventInput.extendedProps?.semester || ''),
+                year: Number(eventInput.extendedProps?.year) || new Date().getFullYear(),
+                location: eventInput.extendedProps?.location || undefined,
+                organizer: eventInput.extendedProps?.organizer || undefined,
+                attendees: eventInput.extendedProps?.attendees || undefined
+              }
+            };
+          }}
         />
 
         {/* Event Detail Panel */}
