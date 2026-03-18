@@ -66,11 +66,11 @@ class HealthCheckResult(BaseModel):
 def check_env_vars() -> CheckResult:
     """Check required environment variables."""
     required_vars = {
-        "ANTHROPIC_API_KEY": "Anthropic API Key for Claude Code",
         "CLAUDE_CODE_PATH": "Path to Claude Code CLI (defaults to 'claude')",
     }
 
     optional_vars = {
+        "ANTHROPIC_API_KEY": "(Optional) Anthropic API Key - not needed if using Claude Max subscription via 'claude' CLI login",
         "GITHUB_PAT": "(Optional) GitHub Personal Access Token - only needed if you want ADW to use a different GitHub account than 'gh auth login'",
         "E2B_API_KEY": "(Optional) E2B API Key for sandbox environments",
         "CLOUDFLARED_TUNNEL_TOKEN": "(Optional) Cloudflare tunnel token for webhook exposure",
@@ -296,19 +296,13 @@ def run_health_check() -> HealthCheckResult:
         if gh_check.error:
             result.errors.append(gh_check.error)
 
-    # Check Claude Code - only if we have the API key
-    if os.getenv("ANTHROPIC_API_KEY"):
-        claude_check = check_claude_code()
-        result.checks["claude_code"] = claude_check
-        if not claude_check.success:
-            result.success = False
-            if claude_check.error:
-                result.errors.append(claude_check.error)
-    else:
-        result.checks["claude_code"] = CheckResult(
-            success=False,
-            details={"skipped": True, "reason": "ANTHROPIC_API_KEY not set"},
-        )
+    # Check Claude Code - works with API key or Claude Max subscription
+    claude_check = check_claude_code()
+    result.checks["claude_code"] = claude_check
+    if not claude_check.success:
+        result.success = False
+        if claude_check.error:
+            result.errors.append(claude_check.error)
 
     return result
 
@@ -371,7 +365,7 @@ def main():
     if not result.success:
         print("\n📝 Next Steps:")
         if any("ANTHROPIC_API_KEY" in e for e in result.errors):
-            print("   1. Set ANTHROPIC_API_KEY in your .env file")
+            print("   1. Set ANTHROPIC_API_KEY in your .env file OR log in with Claude Max: claude login")
         if any("GITHUB_PAT" in e for e in result.errors):
             print("   2. Set GITHUB_PAT in your .env file")
         if any("GitHub CLI" in e for e in result.errors):

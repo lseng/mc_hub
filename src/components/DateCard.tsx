@@ -29,12 +29,20 @@ export const DateCard = memo(function DateCard({
   };
 
   const handleAddToCalendar = () => {
-    // Create calendar event data
-    const startDate = new Date(date.date).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    const endDate = new Date(new Date(date.date).getTime() + 60 * 60 * 1000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    // Parse the date display (e.g., "March 15") and create a proper date
+    // For now, default to current year and 12 PM Pacific time
+    const currentYear = new Date().getFullYear();
+    const parsedDate = new Date(`${date.date} ${currentYear} 12:00 PM PST`);
     
-    // Google Calendar URL
-    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(date.title)}&dates=${startDate}/${endDate}&details=${encodeURIComponent(date.description || '')}`;
+    // Create all-day event (Google Calendar format: YYYYMMDD for all-day events)
+    const startDate = parsedDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+    const formattedStart = startDate.replace(/-/g, '');
+    const nextDay = new Date(parsedDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const formattedEnd = nextDay.toLocaleDateString('en-CA').replace(/-/g, '');
+    
+    // Google Calendar URL for all-day event
+    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(date.title)}&dates=${formattedStart}/${formattedEnd}&details=${encodeURIComponent(date.description || '')}&ctz=America/Los_Angeles`;
     
     window.open(googleCalendarUrl, '_blank');
   };

@@ -8,6 +8,7 @@ import { CollapsibleDatesSection } from './CollapsibleDatesSection';
 import { makeServerRequest } from '../utils/supabase/client';
 import { DateItem } from '../types/app';
 import { fallbackDates } from '../data/importantDates';
+import { getTopResourcesForRole } from '../data/priorityResources';
 import { useIsMobile } from './ui/use-mobile';
 
 interface Resource {
@@ -48,7 +49,9 @@ export function ResourceLibrary({ onResourceClick, selectedResourceId, onToggleM
     const fetchAllResources = async () => {
       try {
         setLoading(true);
-        const response = await makeServerRequest('/resources');
+        // Fetch resources with role-specific ordering if a role filter is active
+        const roleParam = activeFilter !== 'All' ? `?role=${encodeURIComponent(activeFilter.toLowerCase())}` : '';
+        const response = await makeServerRequest(`/resources${roleParam}`);
         console.log('All resources loaded:', response);
 
         let resources: Resource[] = [];
@@ -99,7 +102,7 @@ export function ResourceLibrary({ onResourceClick, selectedResourceId, onToggleM
 
     fetchAllResources();
     fetchCalendarEvents();
-  }, []);
+  }, [activeFilter]); // Re-fetch when role filter changes
 
   // Handle role filter changes (client-side only)
   const handleFilterChange = useCallback((filter: string) => {

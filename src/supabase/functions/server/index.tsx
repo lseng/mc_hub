@@ -41,17 +41,53 @@ app.get("/make-server-e08b724b/health", c => c.json({ status: "ok" }));
 
 // ---------- Featured resources via PostgREST ----------
 app.get("/make-server-e08b724b/resources", async (c) => {
+  const role = c.req.query("role") || "";  // Optional role filter
+  
   const url = new URL(`${REST}/resource`);
   url.searchParams.set("select","id,title,type,section,url,description,date_added,roles,tags,thumbnail_url,position");
   // published true or null
   url.searchParams.set("or","(is_published.eq.true,is_published.is.null)");
-  url.searchParams.set("order","position.nullslast");
-  url.searchParams.append("order","date_added.desc");
-  url.searchParams.set("limit","50");
+  
+  // Role-specific ordering: if role provided, prioritize resources for that role
+  if (role && ["coach", "leader", "apprentice", "member"].includes(role.toLowerCase())) {
+    // First order by whether the resource is for this role (using position as priority within role)
+    url.searchParams.set("order","position.nullslast");
+    url.searchParams.append("order","date_added.desc");
+  } else {
+    // Default ordering: position first, then date
+    url.searchParams.set("order","position.nullslast");
+    url.searchParams.append("order","date_added.desc");
+  }
+  url.searchParams.set("limit","100");  // Increased limit to handle role filtering
 
   const r = await fetch(url, {
     headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` }
   });
+  
+  // If role-specific request, apply client-side sorting to prioritize role-relevant resources
+  if (role) {
+    const data = await r.json();
+    if (Array.isArray(data)) {
+      const roleSpecific = data.filter(resource => 
+        resource.roles?.includes(role.toLowerCase()) || 
+        resource.roles?.includes(role.charAt(0).toUpperCase() + role.slice(1).toLowerCase())
+      );
+      const others = data.filter(resource => 
+        !resource.roles?.includes(role.toLowerCase()) && 
+        !resource.roles?.includes(role.charAt(0).toUpperCase() + role.slice(1).toLowerCase())
+      );
+      const sortedData = [...roleSpecific, ...others];
+      
+      return new Response(JSON.stringify(sortedData), {
+        status: r.status,
+        headers: {
+          "content-type": "application/json",
+          "access-control-allow-origin": "*",
+        }
+      });
+    }
+  }
+  
   return new Response(r.body, {
     status: r.status,
     headers: {
@@ -384,25 +420,28 @@ app.get("/make-server-e08b724b/calendar-events", async (c) => {
         semester = "spring"; // Apr-Jul
       }
 
-      // Format date display (e.g., "August 13")
+      // Format date display (e.g., "August 13") - using Pacific Time
       const dateDisplay = eventDate.toLocaleDateString("en-US", {
         month: "long",
         day: "numeric",
+        timeZone: "America/Los_Angeles"
       });
 
-      // Build description from time or event description
+      // Build description from time or event description - using Pacific Time
       let description = "";
       if (event.start?.dateTime) {
         const startTime = new Date(event.start.dateTime).toLocaleTimeString("en-US", {
           hour: "numeric",
           minute: "2-digit",
           hour12: true,
+          timeZone: "America/Los_Angeles"
         });
         if (event.end?.dateTime) {
           const endTime = new Date(event.end.dateTime).toLocaleTimeString("en-US", {
             hour: "numeric",
             minute: "2-digit",
             hour12: true,
+            timeZone: "America/Los_Angeles"
           });
           description = `${startTime} - ${endTime}`;
         } else {
