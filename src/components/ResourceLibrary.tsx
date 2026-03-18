@@ -5,6 +5,9 @@ import { FilterChips } from './FilterChips';
 import { SearchInput } from './SearchInput';
 import { CollapsibleSection } from './CollapsibleSection';
 import { CollapsibleDatesSection } from './CollapsibleDatesSection';
+import { QuickActions } from './QuickActions';
+import { UpcomingEvents } from './UpcomingEvents';
+import { SmartSearchCard } from './SmartSearchCard';
 import { makeServerRequest } from '../utils/supabase/client';
 import { DateItem } from '../types/app';
 import { fallbackDates } from '../data/importantDates';
@@ -323,6 +326,15 @@ export function ResourceLibrary({ onResourceClick, selectedResourceId, onToggleM
           <FilterChips activeFilter={activeFilter} onFilterChange={handleFilterChange} />
         </div>
         
+        {/* Quick Actions for the selected role */}
+        {activeFilter !== 'All' && !searchQuery && (
+          <QuickActions 
+            resources={allResources}
+            onResourceClick={onResourceClick}
+            userRole={activeFilter}
+          />
+        )}
+        
         {/* Search Input */}
         <div className="w-full">
           <SearchInput 
@@ -336,6 +348,11 @@ export function ResourceLibrary({ onResourceClick, selectedResourceId, onToggleM
             placeholder="Search resources, dates, and descriptions..."
           />
         </div>
+        
+        {/* Show upcoming events when not searching */}
+        {!searchQuery && (
+          <UpcomingEvents dates={importantDates} />
+        )}
 
         {/* Search/Filter Status */}
         <div className="w-full text-sm text-gray-600 min-h-[20px]">

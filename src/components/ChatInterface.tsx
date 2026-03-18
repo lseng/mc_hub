@@ -21,10 +21,12 @@ interface ChatInterfaceProps {
 }
 
 const examplePrompts = [
-  "How do I become an MC coach?",
-  "What resources are available for leaders?", 
-  "Show me the latest forms for apprentices",
-  "Help me find training materials"
+  "What do I need to do to become a coach?",
+  "Show me this week's MC guide",
+  "What forms do leaders need to fill out?",
+  "Help me prepare for apprentice training",
+  "Where can I find the coach check-in agenda?",
+  "What's the deadline for leader applications?"
 ];
 
 function ChatRow({ row, onOpen }: { row: any; onOpen: (r: any) => void }) {
@@ -222,9 +224,9 @@ export function ChatInterface({ onResourceClick }: ChatInterfaceProps) {
               className="text-center space-y-4"
             >
               <div className="space-y-2">
-                <h4 className="text-lg font-medium text-gray-900">Welcome to MC Hub</h4>
-                <p className="text-gray-600 text-base">
-                  I can help you find resources, answer questions about MC programs, and guide you through forms and documentation.
+                <h4 className="text-lg font-medium text-gray-900">Welcome to MC Hub Assistant</h4>
+                <p className="text-gray-600 text-base leading-relaxed">
+                  I'm here to help you navigate MC resources quickly. I can find forms, training materials, guides, and answer questions about becoming a coach, leader, or apprentice. What would you like to know?
                 </p>
               </div>
               

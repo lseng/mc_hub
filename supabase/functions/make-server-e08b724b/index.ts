@@ -9,7 +9,7 @@ const SB_SVC  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || SB_ANON; // prefer 
 const FUNCS   = `${SB_URL}/functions/v1`;
 const REST    = `${SB_URL}/rest/v1`;
 const GEMINI  = Deno.env.get("GEMINI_API_KEY") || "";
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "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";
 
 const ALLOW = new Set([
   "chat",
